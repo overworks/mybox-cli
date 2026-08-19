@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # Only the default branch on push. Every other branch is covered by the
+  # pull_request trigger, and watching both would run each PR commit twice.
   push:
-    branches: ["**"]
+    branches: ["0.x"]
   pull_request:
 
 permissions:
@@ -24,8 +26,8 @@ jobs:
             go-version: stable
     name: test (${{ matrix.label }})
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           # Exactly one of these is set per matrix entry; setup-go falls back to
           # go-version-file when go-version is empty, which keeps the minimum
