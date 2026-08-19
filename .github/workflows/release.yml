@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # The CI workflow watches branches, and a tag is not a branch, so pushing
+      # a tag runs nothing else. Without this the release would publish binaries
+      # that no test had ever been run against.
+      - name: test
+        run: go test -race ./...
+
+      - name: vet
+        run: go vet ./...
+
+      - name: Build release binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          rm -rf dist && mkdir -p dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            goos=${target%/*}; goarch=${target#*/}
+            out="dist/mybox_${VERSION}_${goos}_${goarch}"
+            bin="mybox"; [ "$goos" = windows ] && bin="mybox.exe"
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build \
+              -trimpath \
+              -ldflags "-s -w -X github.com/overworks/mybox-cli/internal/cli.Version=${VERSION}" \
+              -o "$bin" ./cmd/mybox
+            if [ "$goos" = windows ]; then
+              zip -q "${out}.zip" "$bin" README.md README.ko.md LICENSE
+            else
+              tar czf "${out}.tar.gz" "$bin" README.md README.ko.md LICENSE
+            fi
+            rm -f "$bin"
+          done
+          # Name the archives explicitly: a bare glob would fold in an existing
+          # checksums.txt if this ever ran twice in one workspace.
+          (cd dist && sha256sum ./*.tar.gz ./*.zip > checksums.txt)
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
