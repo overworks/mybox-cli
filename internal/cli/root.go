@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/overworks/mybox-cli/internal/api"
@@ -77,12 +76,7 @@ func (g *globals) Client() (*api.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	// A misspelled group in the config file would otherwise leave the
-	// conservative default quietly in place.
-	if unknown := unknownLimitNames(cred.Limits); len(unknown) > 0 {
-		g.Printer().Warn("ignoring unrecognised rate-limit groups in the config file: %s (valid: %s)",
-			strings.Join(unknown, ", "), strings.Join(api.GroupNames(), ", "))
-	}
+	g.warnUnknownLimits(cred.Limits)
 
 	opts := api.Options{
 		Token:     cred.Token,

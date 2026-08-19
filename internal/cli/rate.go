@@ -105,6 +105,21 @@ func parseConfigLimits(m map[string]int) map[api.Group]int {
 	return out
 }
 
+// warnUnknownLimits reports rate-limit group names in a profile that the client
+// does not recognise.
+//
+// Ignoring them silently leaves the conservative default in place, and the user
+// is left wondering why raising the limit changed nothing. Every path that
+// builds a client goes through here, including auth login.
+func (g *globals) warnUnknownLimits(configured map[string]int) {
+	unknown := unknownLimitNames(configured)
+	if len(unknown) == 0 {
+		return
+	}
+	g.Printer().Warn("ignoring unrecognised rate-limit groups in the config file: %s (valid: %s)",
+		strings.Join(unknown, ", "), strings.Join(api.GroupNames(), ", "))
+}
+
 // unknownLimitNames lists configured group names the client does not recognise.
 func unknownLimitNames(m map[string]int) []string {
 	var unknown []string

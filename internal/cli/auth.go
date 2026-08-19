@@ -72,9 +72,12 @@ On a terminal the input is not echoed. It can also be piped in:
 			if err != nil {
 				return err
 			}
+			// Surface a typo now, while the user is still looking at this
+			// profile, rather than on some later command.
+			g.warnUnknownLimits(existing.Limits)
 			probe, err := api.New(api.Options{
 				Token:     token,
-				BaseURL:   existing.BaseURL,
+				BaseURL:   config.ResolveBaseURL(existing.BaseURL),
 				UserAgent: "mybox-cli/" + Version,
 				Limits:    limits,
 			})

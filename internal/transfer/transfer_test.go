@@ -309,6 +309,56 @@ func TestUploadReportsStorageRejection(t *testing.T) {
 	}
 }
 
+func TestUploadRejectsAnOutOfRangeOffset(t *testing.T) {
+	var got capturedUpload
+	c, srv := storageHost(t, 200, uploadOK, &got)
+
+	for _, tc := range []struct {
+		name         string
+		size, offset int64
+	}{
+		{"offset past the end", 10, 99},
+		{"negative offset", 10, -1},
+		{"negative size", -1, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got = capturedUpload{}
+			_, err := c.Upload(t.Context(), UploadRequest{
+				URL: srv.URL, Body: strings.NewReader("x"), FileName: "a.bin",
+				Size: tc.size, Offset: tc.offset, Strategy: DefaultStrategy,
+			})
+			if err == nil {
+				t.Fatal("want an error for an impossible range")
+			}
+			// Left alone, the negative remainder becomes a negative
+			// ContentLength, which net/http sends as chunked -- the one framing
+			// the storage host rejects, with a 400 that names nothing useful.
+			if got.Method != "" {
+				t.Errorf("the request was sent anyway: %s, Transfer-Encoding %v",
+					got.Method, got.TransferEnc)
+			}
+		})
+	}
+}
+
+func TestUploadAcceptsAnOffsetAtTheExactEnd(t *testing.T) {
+	var got capturedUpload
+	c, srv := storageHost(t, 200, uploadOK, &got)
+
+	// A fully delivered file has nothing left to send but is not an error: the
+	// reservation can legitimately report an offset equal to the size.
+	_, err := c.Upload(t.Context(), UploadRequest{
+		URL: srv.URL, Body: strings.NewReader(""), FileName: "a.bin",
+		Size: 10, Offset: 10, Strategy: DefaultStrategy,
+	})
+	if err != nil {
+		t.Fatalf("Upload: %v", err)
+	}
+	if got.Range != "10-9/10" {
+		t.Errorf("Content-Range = %q", got.Range)
+	}
+}
+
 func TestDefaultStrategyIsTheVerifiedOne(t *testing.T) {
 	// A reordering of Strategies must not silently change what users send.
 	if DefaultStrategy.Name != "post-multipart" {

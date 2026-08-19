@@ -231,10 +231,23 @@ func (c *Config) Resolve(flagToken, flagProfile string) (Credentials, error) {
 		return Credentials{}, ErrNoToken
 	}
 
-	if base := strings.TrimSpace(os.Getenv(EnvAPIBase)); base != "" {
-		cred.BaseURL = base
-	}
+	cred.BaseURL = ResolveBaseURL(cred.BaseURL)
 	return cred, nil
+}
+
+// ResolveBaseURL applies the MYBOX_API_BASE override to a profile's base URL,
+// falling back to the profile's own value and then to the client default.
+//
+// It is separate from Resolve because a command can need the endpoint before it
+// has a token to resolve: auth login builds a client to verify the token the
+// user just typed. Without this it would ignore the override and talk to
+// production, which makes it both untestable and wrong for anyone pointing at a
+// different endpoint.
+func ResolveBaseURL(profileBaseURL string) string {
+	if base := strings.TrimSpace(os.Getenv(EnvAPIBase)); base != "" {
+		return base
+	}
+	return profileBaseURL
 }
 
 func resolveName(name string) string {
