@@ -18,6 +18,17 @@ $ mybox df
 
 ## Installing
 
+Prebuilt binaries, for Linux and macOS — the script verifies the release
+checksum and installs to `~/.local/bin` (`--bin-dir` changes that):
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/overworks/mybox-cli/0.x/install.sh | sh
+```
+
+Windows binaries are on the
+[releases page](https://github.com/overworks/mybox-cli/releases). With a Go
+toolchain, there is also:
+
 ```console
 $ go install github.com/overworks/mybox-cli/cmd/mybox@latest
 ```

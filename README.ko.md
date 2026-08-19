@@ -20,6 +20,17 @@ $ mybox df
 
 ## 설치
 
+Linux·macOS용 바이너리는 스크립트로 설치합니다. 릴리스 체크섬을 검증한 뒤
+`~/.local/bin`에 설치하며, 위치는 `--bin-dir`로 바꿀 수 있습니다.
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/overworks/mybox-cli/0.x/install.sh | sh
+```
+
+Windows 바이너리는 [릴리스
+페이지](https://github.com/overworks/mybox-cli/releases)에 있습니다. Go
+툴체인이 있다면 이렇게도 됩니다.
+
 ```console
 $ go install github.com/overworks/mybox-cli/cmd/mybox@latest
 ```
