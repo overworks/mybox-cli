@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both ends of the supported range. Testing only the newest release
+        # would let the minimum in go.mod quietly rot until a user on it
+        # reports the breakage.
+        include:
+          - label: minimum
+            go-version-file: go.mod
+          - label: latest
+            go-version: stable
+    name: test (${{ matrix.label }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Exactly one of these is set per matrix entry; setup-go falls back to
+          # go-version-file when go-version is empty, which keeps the minimum
+          # declared in one place.
+          go-version: ${{ matrix.go-version }}
+          go-version-file: ${{ matrix.go-version-file }}
+
+      - name: report the Go version in use
+        run: go version
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      # The e2e suite needs a real account, so it is only compiled here.
+      - name: go vet (e2e build tag)
+        run: go vet -tags e2e ./...
+
+      - name: test
+        run: go test -race -cover ./...
+
+      # A CLI that only builds on the developer's machine is not much use.
+      - name: cross-compile
+        run: |
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            GOOS=${target%/*} GOARCH=${target#*/} go build -o /dev/null ./cmd/mybox
+          done
