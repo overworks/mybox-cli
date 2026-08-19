@@ -532,11 +532,48 @@ func TestUnknownCommandIsAUsageError(t *testing.T) {
 	f := newFakeAPI(t)
 
 	_, _, code := f.run("frobnicate")
-	if code != ExitError && code != ExitUsage {
-		t.Errorf("exit = %d, want a failure", code)
+	if code != ExitUsage {
+		t.Errorf("exit = %d, want %d", code, ExitUsage)
 	}
 	if len(f.requests) != 0 {
 		t.Errorf("an unknown command called the API: %v", f.requests)
+	}
+}
+
+func TestTypodCommandSuggestsTheRealOne(t *testing.T) {
+	f := newFakeAPI(t)
+
+	_, stderr, code := f.run("lst")
+	if code != ExitUsage {
+		t.Errorf("exit = %d, want %d", code, ExitUsage)
+	}
+	if !strings.Contains(stderr, `"ls"`) {
+		t.Errorf("stderr should suggest ls:\n%s", stderr)
+	}
+}
+
+// A usage mistake has to exit 2 no matter which layer catches it: cobra's flag
+// parser, its positional-args validators, or the argument checks down in
+// internal/api. Before issue #2 the api-layer ones leaked out as exit 1.
+func TestUsageMistakesExitTwoRegardlessOfLayer(t *testing.T) {
+	for name, args := range map[string][]string{
+		"unknown flag":                     {"--bogus"},
+		"missing argument":                 {"stat"},
+		"too many arguments":               {"ls", "/a", "/b"},
+		"api: search without criteria":     {"search", "files"},
+		"api: unknown date field":          {"search", "files", "x", "--date-field", "accessed"},
+		"api: undocumented trash interval": {"trash", "autodelete", "7"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := newFakeAPI(t)
+			_, _, code := f.run(args...)
+			if code != ExitUsage {
+				t.Errorf("mybox %s: exit = %d, want %d", strings.Join(args, " "), code, ExitUsage)
+			}
+			if len(f.requests) != 0 {
+				t.Errorf("a usage mistake reached the API: %v", f.requests)
+			}
+		})
 	}
 }
 

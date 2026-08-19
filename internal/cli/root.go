@@ -170,6 +170,10 @@ To get started, create a token from MYBOX web > 설정 > 계정 및 개인 액�
 토큰 관리, then run 'mybox auth login'.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		// SuggestionsFor returns nothing until this is set; cobra only fills
+		// in its default of 2 on its own internal error path, which the Args
+		// validator below bypasses.
+		SuggestionsMinimumDistance: 2,
 		// Global flags are validated before any command runs, so a malformed
 		// --rate is reported as the flag mistake it is rather than surfacing as
 		// whatever the command happened to need first (a missing token, say).
@@ -177,19 +181,31 @@ To get started, create a token from MYBOX web > 설정 > 계정 및 개인 액�
 			_, err := parseRate(g.rate)
 			return err
 		},
-		// A command with no RunE makes cobra print help and succeed, even for a
-		// typo'd subcommand. Handle the bare and unknown cases explicitly so a
-		// mistyped command fails loudly.
-		RunE: func(cmd *cobra.Command, args []string) error {
+		// Any positional argument to the root is a typo'd subcommand. This has
+		// to be an Args validator, not a check inside RunE: with Args unset,
+		// cobra rejects the argument itself with an untyped error that exits as
+		// a general failure instead of a usage error.
+		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
-				return cmd.Help()
+				return nil
 			}
 			if suggestions := cmd.SuggestionsFor(args[0]); len(suggestions) > 0 {
 				return usagef("unknown command %q; did you mean %q?", args[0], suggestions[0])
 			}
 			return usagef("unknown command %q; run 'mybox --help' to see what is available", args[0])
 		},
+		// A command with no RunE makes cobra print help and succeed, even for a
+		// typo'd subcommand — the Args validator above only runs once RunE
+		// exists.
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return cmd.Help()
+		},
 	}
+	// Flag mistakes (unknown flag, missing value, malformed value) are usage
+	// errors too. Subcommands inherit this through cobra's parent lookup.
+	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+		return &UsageError{Err: err}
+	})
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 
@@ -223,7 +239,31 @@ To get started, create a token from MYBOX web > 설정 > 계정 및 개인 액�
 		newCacheCommand(g),
 		newDebugCommand(g),
 	)
+	markArgsMistakesAsUsageErrors(root)
 	return root
+}
+
+// markArgsMistakesAsUsageErrors wraps every positional-args validator in the
+// tree so its failures exit as usage errors. The stock cobra validators
+// (ExactArgs and friends) return plain errors, which would otherwise exit as
+// general failures; wrapping here once beats remembering to do it at every
+// command definition.
+func markArgsMistakesAsUsageErrors(cmd *cobra.Command) {
+	if check := cmd.Args; check != nil {
+		cmd.Args = func(cmd *cobra.Command, args []string) error {
+			if err := check(cmd, args); err != nil {
+				var usageErr *UsageError
+				if errors.As(err, &usageErr) {
+					return err
+				}
+				return &UsageError{Err: err}
+			}
+			return nil
+		}
+	}
+	for _, sub := range cmd.Commands() {
+		markArgsMistakesAsUsageErrors(sub)
+	}
 }
 
 // Exit codes. They let scripts branch on why a command failed without parsing
@@ -272,6 +312,11 @@ func ExitCode(err error) int {
 
 	var usageErr *UsageError
 	if errors.As(err, &usageErr) {
+		return ExitUsage
+	}
+	// Argument checks in internal/api reject impossible requests before any
+	// call is made; they are the user's mistake, same as a bad flag.
+	if errors.Is(err, api.ErrInvalidRequest) {
 		return ExitUsage
 	}
 	return ExitError

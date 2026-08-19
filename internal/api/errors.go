@@ -2,11 +2,30 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
+
+// ErrInvalidRequest marks a request this package rejected locally, before any
+// API call was made, because the arguments could not possibly succeed. The CLI
+// maps it to the same exit status as any other usage mistake.
+var ErrInvalidRequest = errors.New("invalid request")
+
+// invalidRequestf builds an error whose text is only the formatted message but
+// which matches errors.Is(err, ErrInvalidRequest). Every pre-call argument
+// check in this package must use it, or the mistake exits as a general failure
+// instead of a usage error.
+func invalidRequestf(format string, args ...any) error {
+	return &invalidRequestError{msg: fmt.Sprintf(format, args...)}
+}
+
+type invalidRequestError struct{ msg string }
+
+func (e *invalidRequestError) Error() string { return e.msg }
+func (e *invalidRequestError) Unwrap() error { return ErrInvalidRequest }
 
 // Error is the error body every MYBOX endpoint returns on a non-2xx status.
 //

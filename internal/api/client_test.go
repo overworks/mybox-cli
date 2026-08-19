@@ -880,3 +880,52 @@ func TestNewTrimsTrailingSlashFromBaseURL(t *testing.T) {
 		t.Errorf("BaseURL() = %q", c.BaseURL())
 	}
 }
+
+// Every local argument check must match ErrInvalidRequest, or the CLI reports
+// the user's mistake as a general failure instead of a usage error (issue #2).
+func TestLocalValidationErrorsMatchErrInvalidRequest(t *testing.T) {
+	c, got := newServer(t, 200, `{}`)
+
+	for name, call := range map[string]func() error{
+		"file search without criteria": func() error {
+			_, err := c.SearchFiles(t.Context(), FileSearchOptions{})
+			return err
+		},
+		"unknown category": func() error {
+			_, err := c.SearchFiles(t.Context(), FileSearchOptions{Category: "spreadsheet"})
+			return err
+		},
+		"folder search without criteria": func() error {
+			_, err := c.SearchFolders(t.Context(), FolderSearchOptions{})
+			return err
+		},
+		"unknown date field": func() error {
+			_, err := c.SearchFiles(t.Context(), FileSearchOptions{Query: "x", DateField: "accessed"})
+			return err
+		},
+		"undocumented trash interval": func() error {
+			_, err := c.SetTrashAutoDeleteDays(t.Context(), 7)
+			return err
+		},
+		"negative upload size": func() error {
+			_, err := c.CreateUploadURL(t.Context(), UploadRequest{FileName: "a", FileSize: -1})
+			return err
+		},
+		"resume without modified time": func() error {
+			_, err := c.CreateUploadURL(t.Context(), UploadRequest{FileName: "a", FileSize: 1, Resume: true})
+			return err
+		},
+	} {
+		err := call()
+		if err == nil {
+			t.Errorf("%s: want an error, got nil", name)
+			continue
+		}
+		if !errors.Is(err, ErrInvalidRequest) {
+			t.Errorf("%s: error %q does not match ErrInvalidRequest", name, err)
+		}
+	}
+	if got.Method != "" {
+		t.Errorf("a locally rejected request reached the server as %s %s", got.Method, got.Path)
+	}
+}

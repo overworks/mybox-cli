@@ -57,8 +57,8 @@ segment (cached locally for 24 hours per account). So:
 | Code | Meaning |
 |---|---|
 | 0 | Success |
-| 1 | General failure |
-| 2 | Usage error |
+| 1 | Failed while doing the work (network, server, unexpected condition) |
+| 2 | Usage error — bad command, flag or argument; nothing was sent to the API |
 | 3 | Authentication failed (401, 403) — on a previously working setup, usually an expired token (they last 180 days at most) |
 | 4 | Not found (404) |
 | 5 | Rate limited (429) |
