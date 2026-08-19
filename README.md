@@ -72,22 +72,22 @@ $ mybox cache clear            # after moving files from the web UI
 | Command | What it does |
 |---|---|
 | `mybox df` | Quota, per-category file counts, maximum upload size |
-| `mybox ls [path]` | Folder contents. `-l` detailed, `-a` include hidden, `--sort` |
+| `mybox ls [path]` | Folder contents. `-l` detailed, `-a` include hidden, `--sort`, `-n` limit |
 | `mybox stat path` | File or folder properties |
-| `mybox search files [query]` | Search files. `--category`, `--in`, `--since`, `--until` |
-| `mybox search folders [query]` | Search folders. `--path`, `--in` |
+| `mybox search files [query]` | Search files. `--category`, `--in`, `--since`, `--until`, `--date-field`, `-n` limit |
+| `mybox search folders [query]` | Search folders. `--path`, `--in`, `--since`, `--until`, `--date-field`, `-n` limit |
 
 ### Files
 
 | Command | What it does |
 |---|---|
-| `mybox up local... [folder]` | Upload. `--overwrite`, `--resume` |
-| `mybox down path...` | Download. `-o dir`, `-o -` for stdout |
-| `mybox mkdir [-p] path` | Create a folder |
+| `mybox up local... [folder]` | Upload. `--overwrite`, `--resume`, `--strategy` |
+| `mybox down path...` | Download. `-o dir`, `-o -` for stdout, `--overwrite` |
+| `mybox mkdir [-p] path...` | Create folders |
 | `mybox cp src dst` | Copy within MYBOX. `--name`, `--overwrite` |
 | `mybox mv src dst` | Move, renaming on the way if asked |
 | `mybox rename path name` | Rename in place; the ID is kept |
-| `mybox rm path...` | Move to the trash |
+| `mybox rm path...` | Move to the trash. `-y` skips the prompt |
 | `mybox star` / `unstar` | Add to or remove from favourites |
 
 Transfers between your machine and MYBOX are `up` and `down`; `cp` copies within
@@ -97,14 +97,27 @@ MYBOX only.
 
 | Command | What it does |
 |---|---|
-| `mybox trash ls` | List |
-| `mybox trash restore target` | Restore to the original location |
-| `mybox trash rm target...` | Delete one permanently |
-| `mybox trash empty` | Empty it |
+| `mybox trash ls` | List. `--sort`, `-n` limit |
+| `mybox trash restore target...` | Restore to the original location. `--overwrite` |
+| `mybox trash rm target...` | Delete permanently. `-y` skips the prompt |
+| `mybox trash empty` | Empty it. `-y` skips the prompt |
 | `mybox trash autodelete [days]` | Read or set the interval (0, 5, 15, 30, 50) |
 
 Trashed items have no path, so name them by the `id:` shown by `trash ls`, or by
 name. An ambiguous name stops the command rather than picking one.
+
+### Auth and housekeeping
+
+| Command | What it does |
+|---|---|
+| `mybox auth login` | Save a personal access token. `--set-default` |
+| `mybox auth status` | Verify the token and report the effective rate limits |
+| `mybox auth logout` | Remove a stored token |
+| `mybox auth list` | List stored profiles |
+| `mybox cache info` | Where the path cache lives and how big it is |
+| `mybox cache clear` | Empty the path cache |
+| `mybox version` | Print the version |
+| `mybox completion shell` | Completion script for bash, zsh, fish or powershell |
 
 ### Global options
 
@@ -214,6 +227,11 @@ $ mybox debug upload-probe /tmp/probe.txt --dest /임시 --cleanup
 $ mybox up ./file /dest --strategy post-raw
 ```
 
+`--strategy` (and `MYBOX_UPLOAD_STRATEGY`) accepts `post-multipart` — the
+default, and the only format the live service currently accepts — plus
+`post-multipart-file`, `post-raw`, `put-raw` and `put-multipart`, kept so the
+probe has something to measure with if the format ever changes.
+
 ## Environment variables
 
 | Variable | Purpose |
@@ -223,7 +241,7 @@ $ mybox up ./file /dest --strategy post-raw
 | `MYBOX_CONFIG_HOME` | Config directory (default `~/.config/mybox`) |
 | `MYBOX_CACHE_HOME` | Cache directory (default `~/.cache/mybox`) |
 | `MYBOX_API_BASE` | Override the API root |
-| `MYBOX_UPLOAD_STRATEGY` | Override the upload wire format |
+| `MYBOX_UPLOAD_STRATEGY` | Override the upload wire format ([Known limits](#known-limits)) |
 
 ## Shell completion
 

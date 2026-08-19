@@ -74,22 +74,22 @@ $ mybox cache clear            # 웹에서 파일을 옮겼다면 비우기
 | 명령 | 설명 |
 |---|---|
 | `mybox df` | 용량, 파일 종류별 개수, 최대 업로드 크기 |
-| `mybox ls [경로]` | 폴더 내용. `-l` 상세, `-a` 숨김 포함, `--sort` |
+| `mybox ls [경로]` | 폴더 내용. `-l` 상세, `-a` 숨김 포함, `--sort`, `-n` 개수 제한 |
 | `mybox stat 경로` | 파일·폴더 속성 |
-| `mybox search files [검색어]` | 파일 검색. `--category`, `--in`, `--since`, `--until` |
-| `mybox search folders [검색어]` | 폴더 검색. `--path`, `--in` |
+| `mybox search files [검색어]` | 파일 검색. `--category`, `--in`, `--since`, `--until`, `--date-field`, `-n` 개수 제한 |
+| `mybox search folders [검색어]` | 폴더 검색. `--path`, `--in`, `--since`, `--until`, `--date-field`, `-n` 개수 제한 |
 
 ### 파일 조작
 
 | 명령 | 설명 |
 |---|---|
-| `mybox up 로컬파일... [대상폴더]` | 업로드. `--overwrite`, `--resume` |
-| `mybox down 경로...` | 다운로드. `-o 디렉터리`, `-o -`(표준 출력) |
-| `mybox mkdir [-p] 경로` | 폴더 생성 |
+| `mybox up 로컬파일... [대상폴더]` | 업로드. `--overwrite`, `--resume`, `--strategy` |
+| `mybox down 경로...` | 다운로드. `-o 디렉터리`, `-o -`(표준 출력), `--overwrite` |
+| `mybox mkdir [-p] 경로...` | 폴더 생성 |
 | `mybox cp 원본 대상` | MYBOX 내부 복사. `--name`, `--overwrite` |
 | `mybox mv 원본 대상` | 이동(필요하면 이름 변경도 함께) |
 | `mybox rename 경로 새이름` | 이름 변경. ID는 유지됨 |
-| `mybox rm 경로...` | 휴지통으로 이동 |
+| `mybox rm 경로...` | 휴지통으로 이동. `-y`는 확인 생략 |
 | `mybox star` / `unstar` | 즐겨찾기 추가·해제 |
 
 로컬 ↔ MYBOX 전송은 `up`/`down`이고, `cp`는 MYBOX 내부 복사 전용입니다.
@@ -98,14 +98,27 @@ $ mybox cache clear            # 웹에서 파일을 옮겼다면 비우기
 
 | 명령 | 설명 |
 |---|---|
-| `mybox trash ls` | 목록 |
-| `mybox trash restore 대상` | 원래 위치로 복원 |
-| `mybox trash rm 대상...` | 개별 영구 삭제 |
-| `mybox trash empty` | 비우기 |
+| `mybox trash ls` | 목록. `--sort`, `-n` 개수 제한 |
+| `mybox trash restore 대상...` | 원래 위치로 복원. `--overwrite` |
+| `mybox trash rm 대상...` | 영구 삭제. `-y`는 확인 생략 |
+| `mybox trash empty` | 비우기. `-y`는 확인 생략 |
 | `mybox trash autodelete [일수]` | 자동 삭제 주기 조회·설정 (0, 5, 15, 30, 50) |
 
 휴지통 항목에는 경로가 없으므로 `trash ls`가 보여주는 `id:` 또는 이름으로
 지정합니다. 이름이 중복되면 임의로 고르지 않고 중단합니다.
+
+### 인증과 관리
+
+| 명령 | 설명 |
+|---|---|
+| `mybox auth login` | 개인 액세스 토큰 저장. `--set-default` |
+| `mybox auth status` | 토큰 확인과 적용 중인 호출 한도 표시 |
+| `mybox auth logout` | 저장된 토큰 삭제 |
+| `mybox auth list` | 프로파일 목록 |
+| `mybox cache info` | 경로 캐시 위치와 크기 |
+| `mybox cache clear` | 경로 캐시 비우기 |
+| `mybox version` | 버전 표시 |
+| `mybox completion 셸` | bash, zsh, fish, powershell 자동완성 스크립트 |
 
 ### 전역 옵션
 
@@ -211,6 +224,11 @@ $ mybox debug upload-probe /tmp/probe.txt --dest /임시 --cleanup
 $ mybox up ./파일 /대상 --strategy post-raw
 ```
 
+`--strategy`(와 `MYBOX_UPLOAD_STRATEGY`)에 쓸 수 있는 값은
+`post-multipart`(기본값이자 현재 서비스가 받아 주는 유일한 형식), 그리고
+`post-multipart-file`, `post-raw`, `put-raw`, `put-multipart`입니다. 나머지는
+형식이 바뀌었을 때 다시 실측하는 용도로 남겨 둔 것입니다.
+
 ## 환경 변수
 
 | 변수 | 용도 |
@@ -220,7 +238,7 @@ $ mybox up ./파일 /대상 --strategy post-raw
 | `MYBOX_CONFIG_HOME` | 설정 디렉터리 (기본 `~/.config/mybox`) |
 | `MYBOX_CACHE_HOME` | 캐시 디렉터리 (기본 `~/.cache/mybox`) |
 | `MYBOX_API_BASE` | API 주소 재정의 |
-| `MYBOX_UPLOAD_STRATEGY` | 업로드 전송 형식 |
+| `MYBOX_UPLOAD_STRATEGY` | 업로드 전송 형식 ([알려진 제약](#알려진-제약)) |
 
 ## 자동완성
 
