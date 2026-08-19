@@ -1,8 +1,8 @@
 # Contributing to mybox-cli
 
-This file is the single source of truth for how the project is built and what is
-expected of a change; [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) point
-here rather than repeating it.
+This file is the full development guide: how the project is built and what is
+expected of a change. [AGENTS.md](AGENTS.md) is a condensed checklist for
+coding agents that links back into this file.
 
 ## Getting set up
 
@@ -29,8 +29,17 @@ make lint   # gofmt + go vet
 make test   # go test -race -cover, no network
 ```
 
-`make test` runs to completion without an account. Every HTTP interaction in it
-goes to an `httptest.Server`.
+### Hermetic tests
+
+`make test` runs to completion without an account: every HTTP interaction goes
+to an `httptest.Server`, which the CLI is pointed at through the
+`MYBOX_API_BASE` environment variable (`config.EnvAPIBase`; `newFakeAPI` in
+`internal/cli/cli_test.go` is the pattern to copy).
+
+Any code path that builds its own API client must apply that override itself,
+by routing the decision through `config.ResolveBaseURL`. `auth login` builds a
+probe client before a profile exists and once skipped the override — its test
+"passed" while silently authenticating against the production host.
 
 ## Testing against a real account
 
