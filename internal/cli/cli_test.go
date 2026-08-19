@@ -1525,6 +1525,44 @@ func TestInvalidRateIsCaughtOnCommandsThatNeedNoAPI(t *testing.T) {
 	}
 }
 
+func TestAuthLoginWarnsAboutUnknownLimitGroups(t *testing.T) {
+	f := newFakeAPI(t).json("GET", "/drive/storage", 200, storageBody)
+	srv := f.start()
+
+	t.Setenv(config.EnvConfigHome, t.TempDir())
+	t.Setenv(config.EnvToken, "")
+	t.Setenv(config.EnvProfile, "")
+	t.Setenv(config.EnvAPIBase, srv.URL)
+	t.Setenv(resolve.EnvCacheHome, t.TempDir())
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.SetProfile(config.DefaultProfile, config.Profile{Limits: map[string]int{"serach": 30}})
+	if err := cfg.Save(); err != nil {
+		t.Fatal(err)
+	}
+
+	// auth login builds its own probe client, so it used to skip the warning
+	// every other command gives -- the worst moment to stay quiet, since the
+	// user is looking straight at this profile.
+	var out, errBuf bytes.Buffer
+	code := Execute(t.Context(), []string{"--token", "mbx_pat_test", "auth", "login"}, &out, &errBuf)
+	if code != ExitOK {
+		t.Fatalf("exit = %d: %s", code, errBuf.String())
+	}
+	if !strings.Contains(errBuf.String(), "serach") {
+		t.Errorf("stderr should name the unrecognised group:\n%s", errBuf.String())
+	}
+	// auth login builds its own client, so it has to apply $MYBOX_API_BASE
+	// itself. When it did not, this test silently authenticated against the
+	// real MYBOX service instead of the fake one.
+	if len(f.requests) == 0 {
+		t.Error("auth login never reached the fake API; it ignored $" + config.EnvAPIBase)
+	}
+}
+
 func TestUnknownConfigLimitGroupWarns(t *testing.T) {
 	f := newFakeAPI(t).json("GET", "/drive/storage", 200, storageBody)
 	srv := f.start()

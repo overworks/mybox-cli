@@ -114,6 +114,17 @@ type UploadResult struct {
 // stoken parameter, and the storage host is a different service from the API
 // host the personal access token belongs to.
 func (c *Client) Upload(ctx context.Context, req UploadRequest) (*UploadResult, error) {
+	// A negative remainder would reach net/http as a negative ContentLength,
+	// which it reads as "length unknown" and answers with chunked encoding --
+	// the one framing the storage host refuses. The resulting 400 says nothing
+	// about the offset that caused it, so reject the range here instead.
+	if req.Size < 0 {
+		return nil, fmt.Errorf("file size cannot be negative, got %d", req.Size)
+	}
+	if req.Offset < 0 || req.Offset > req.Size {
+		return nil, fmt.Errorf("resume offset %d is outside a file of %d bytes", req.Offset, req.Size)
+	}
+
 	httpReq, err := c.buildUpload(ctx, req)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ test:
 
 lint:
 	@out=$$(gofmt -l .); \
-	if [ -n "$$out" ]; then echo "gofmt를 실행하세요:"; echo "$$out"; exit 1; fi
+	if [ -n "$$out" ]; then echo "These files need gofmt:"; echo "$$out"; exit 1; fi
 	go vet ./...
 
 install:

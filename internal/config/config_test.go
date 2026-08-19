@@ -289,6 +289,28 @@ func TestResolveEnvBaseURLWinsOverProfile(t *testing.T) {
 	}
 }
 
+func TestResolveBaseURLAppliesTheEnvironmentOverride(t *testing.T) {
+	tempConfig(t)
+
+	if got := ResolveBaseURL("https://profile.example/v1"); got != "https://profile.example/v1" {
+		t.Errorf("with no override: %q", got)
+	}
+	if got := ResolveBaseURL(""); got != "" {
+		t.Errorf("with nothing set: %q, want empty so the client default applies", got)
+	}
+
+	t.Setenv(EnvAPIBase, "https://env.example/v1")
+	if got := ResolveBaseURL("https://profile.example/v1"); got != "https://env.example/v1" {
+		t.Errorf("the environment should win: %q", got)
+	}
+	// Whitespace-only is not an override; it would otherwise point the client
+	// at an unparseable endpoint.
+	t.Setenv(EnvAPIBase, "   ")
+	if got := ResolveBaseURL("https://profile.example/v1"); got != "https://profile.example/v1" {
+		t.Errorf("a blank override should be ignored: %q", got)
+	}
+}
+
 func TestRedactKeepsTheTokenUnusable(t *testing.T) {
 	for _, tc := range []struct{ give, want string }{
 		{"", ""},
