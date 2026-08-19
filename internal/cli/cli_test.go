@@ -540,7 +540,7 @@ func TestUnknownCommandIsAUsageError(t *testing.T) {
 	}
 }
 
-func TestTypodCommandSuggestsTheRealOne(t *testing.T) {
+func TestMistypedCommandSuggestsTheRealOne(t *testing.T) {
 	f := newFakeAPI(t)
 
 	_, stderr, code := f.run("lst")
