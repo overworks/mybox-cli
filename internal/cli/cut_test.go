@@ -83,9 +83,15 @@ func TestCuttingDialerDropsTheConnectionMidBody(t *testing.T) {
 	const cutAfter = 64 << 10
 
 	var received atomic.Int64
+	// The handler runs on the server's own goroutine and is still draining the
+	// body when Upload returns on the client side. Without this signal the
+	// assertions race the read, which shows up as an occasional "the server
+	// received nothing" on a loaded machine.
+	drained := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n, _ := io.Copy(io.Discard, r.Body) // the error is the point; count what arrived
 		received.Add(n)
+		close(drained)
 		w.WriteHeader(200)
 	}))
 	t.Cleanup(srv.Close)
@@ -109,6 +115,13 @@ func TestCuttingDialerDropsTheConnectionMidBody(t *testing.T) {
 	if wrote := dialer.written.Load(); wrote > cutAfter {
 		t.Errorf("cut after %d bytes, past the %d limit", wrote, cutAfter)
 	}
+
+	select {
+	case <-drained:
+	case <-time.After(30 * time.Second):
+		t.Fatal("the server never finished reading the body")
+	}
+
 	got := received.Load()
 	if got == 0 {
 		t.Error("the server received nothing; the cut lands too early")
