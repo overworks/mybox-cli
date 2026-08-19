@@ -55,5 +55,7 @@ documented examples — both explained in
 ## When you touch prose
 
 [README.md](README.md) and [README.ko.md](README.ko.md) mirror each other:
-update both, or neither. Everything else is English; the Korean file and folder
-names in test data stay ([CONTRIBUTING.md](CONTRIBUTING.md#prose)).
+update both, or neither. A change to the command surface also updates
+[skills/mybox](skills/mybox/SKILL.md). Everything else is English; the Korean
+file and folder names in test data stay
+([CONTRIBUTING.md](CONTRIBUTING.md#prose)).

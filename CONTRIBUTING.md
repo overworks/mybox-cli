@@ -126,8 +126,9 @@ docs/               the API reference, including what Naver does not document
    deserialised result. **Take the fixture from Naver's documented response
    example** rather than inventing one.
 4. If it is a listing, expose an `Iter…` variant built on `iterPages`.
-5. Add the command in `internal/cli` and a row to the tables in
-   [README.md](README.md) **and** [README.ko.md](README.ko.md).
+5. Add the command in `internal/cli`, a row to the tables in
+   [README.md](README.md) **and** [README.ko.md](README.ko.md), and update
+   [skills/mybox](skills/mybox/SKILL.md) if the command surface changed.
 6. If it needs a new rate-limit group, add it in `limiter.go`. `api.GroupByName`
    is the only definition of those names — do not repeat the strings elsewhere.
 
@@ -144,8 +145,8 @@ worse than an admitted gap.
 ## Prose
 
 [README.md](README.md) and [README.ko.md](README.ko.md) mirror each other. Update
-both, or neither. Everything else — this file, `AGENTS.md`, `docs/` — is English
-only.
+both, or neither. Everything else — this file, `AGENTS.md`, `docs/`, `skills/` —
+is English only.
 
 ## Commits
 

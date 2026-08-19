@@ -248,6 +248,27 @@ $ mybox completion bash | sudo tee /etc/bash_completion.d/mybox
 $ mybox completion fish > ~/.config/fish/completions/mybox.fish
 ```
 
+## 에이전트 스킬
+
+[skills/mybox](skills/mybox/SKILL.md)는 AI 에이전트가 이 CLI를 안전하게 다루는
+법을 가르칩니다: JSON 출력, ID 기반 작업, 호출 한도 예절, 파괴적 명령에 `-y`를
+붙여도 되는 조건 (영문). [Agent Skills](https://agentskills.io) 공개 표준을
+따릅니다.
+
+Claude Code에서는 플러그인으로 설치합니다.
+
+```
+/plugin marketplace add overworks/mybox-cli
+/plugin install mybox@mybox-cli
+```
+
+스킬을 읽는 다른 에이전트라면 폴더를 복사하거나 심링크하면 됩니다.
+
+```console
+$ cp -r skills/mybox ~/.claude/skills/    # 모든 프로젝트
+$ cp -r skills/mybox .claude/skills/      # 현재 프로젝트만
+```
+
 ## 문서
 
 - [docs/api-reference.md](docs/api-reference.md) — 엔드포인트 20개와, 네이버가

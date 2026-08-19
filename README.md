@@ -251,6 +251,27 @@ $ mybox completion bash | sudo tee /etc/bash_completion.d/mybox
 $ mybox completion fish > ~/.config/fish/completions/mybox.fish
 ```
 
+## Agent skill
+
+[skills/mybox](skills/mybox/SKILL.md) teaches AI agents to drive this CLI
+safely: JSON output, working by id, rate-limit etiquette, and when a
+destructive command genuinely warrants `-y`. It follows the
+[Agent Skills](https://agentskills.io) open standard.
+
+Claude Code installs it as a plugin:
+
+```
+/plugin marketplace add overworks/mybox-cli
+/plugin install mybox@mybox-cli
+```
+
+Any other agent that reads skills gets it by copy or symlink.
+
+```console
+$ cp -r skills/mybox ~/.claude/skills/    # every project
+$ cp -r skills/mybox .claude/skills/      # this project only
+```
+
 ## Documentation
 
 - [docs/api-reference.md](docs/api-reference.md) — the twenty endpoints, plus the

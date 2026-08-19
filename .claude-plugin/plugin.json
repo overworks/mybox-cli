@@ -1,0 +1,7 @@
+{
+  "name": "mybox",
+  "description": "Agent skill that teaches AI agents to drive the mybox CLI for Naver MYBOX cloud storage.",
+  "version": "0.1.0",
+  "author": { "name": "Minhyung Park" },
+  "skills": "./skills/"
+}

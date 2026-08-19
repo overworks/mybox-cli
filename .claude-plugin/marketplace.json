@@ -1,0 +1,14 @@
+{
+  "name": "mybox-cli",
+  "description": "Skills for using the mybox CLI, a command-line client for Naver MYBOX.",
+  "owner": {
+    "name": "Minhyung Park"
+  },
+  "plugins": [
+    {
+      "name": "mybox",
+      "source": "./",
+      "description": "Agent skill for using the mybox CLI (Naver MYBOX)."
+    }
+  ]
+}
