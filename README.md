@@ -156,8 +156,8 @@ Exit codes distinguish why something failed.
 | Code | Meaning |
 |---|---|
 | 0 | Success |
-| 1 | General failure |
-| 2 | Usage error |
+| 1 | Failed while doing the work (network, server, unexpected condition) |
+| 2 | Usage error — a bad command, flag or argument, caught before any API call |
 | 3 | Authentication failed (401, 403) |
 | 4 | Not found (404) |
 | 5 | Rate limited (429) |

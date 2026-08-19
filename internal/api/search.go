@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"net/http"
 	"net/url"
@@ -38,10 +37,10 @@ type FileSearchOptions struct {
 
 func (o FileSearchOptions) validate() error {
 	if o.Query == "" && o.Category == "" && o.StartDate == "" && o.EndDate == "" {
-		return fmt.Errorf("searching files needs at least one of: a query, a category, a date range")
+		return invalidRequestf("searching files needs at least one of: a query, a category, a date range")
 	}
 	if o.Category != "" && !slices.Contains(Categories, o.Category) {
-		return fmt.Errorf("unknown category %q; valid values are %v", o.Category, Categories)
+		return invalidRequestf("unknown category %q; valid values are %v", o.Category, Categories)
 	}
 	return validateDateField(o.DateField)
 }
@@ -110,7 +109,7 @@ type FolderSearchOptions struct {
 
 func (o FolderSearchOptions) validate() error {
 	if o.Query == "" && o.Path == "" && o.StartDate == "" && o.EndDate == "" {
-		return fmt.Errorf("searching folders needs at least one of: a query, --path, a date range")
+		return invalidRequestf("searching folders needs at least one of: a query, --path, a date range")
 	}
 	return validateDateField(o.DateField)
 }
@@ -164,7 +163,7 @@ func validateDateField(f string) error {
 	case "", DateFieldCreated, DateFieldModified:
 		return nil
 	default:
-		return fmt.Errorf("date field must be %q or %q, got %q", DateFieldCreated, DateFieldModified, f)
+		return invalidRequestf("date field must be %q or %q, got %q", DateFieldCreated, DateFieldModified, f)
 	}
 }
 

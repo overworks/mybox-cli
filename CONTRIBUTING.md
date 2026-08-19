@@ -108,6 +108,11 @@ docs/               the API reference, including what Naver does not document
   enough that rejecting an impossible request locally beats a round trip. A
   malformed global flag is caught in `PersistentPreRunE` so it is not masked by
   whatever the command needed first.
+- **A usage mistake exits 2, wherever it is caught.** Checks in `internal/cli`
+  return `usagef(...)`; argument checks in `internal/api` use
+  `invalidRequestf(...)`, which matches `api.ErrInvalidRequest`. A plain
+  `fmt.Errorf` in either place leaks the mistake out as a general failure
+  (exit 1) and breaks the documented contract.
 - **Incidental messages go to stderr.** stdout carries results only, so `--json`
   output can be piped straight into `jq`.
 - **Destructive actions confirm.** Without a TTY there is nobody to ask, so they

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"iter"
 	"net/http"
 	"net/url"
@@ -22,7 +21,7 @@ func (c *Client) GetStorage(ctx context.Context) (*Storage, error) {
 // 15, 30 and 50 are accepted; other values are rejected before any call is made.
 func (c *Client) SetTrashAutoDeleteDays(ctx context.Context, days int) (*TrashAutoDelete, error) {
 	if !slices.Contains(ValidTrashAutoDeleteDays, days) {
-		return nil, fmt.Errorf("trash auto-delete days must be one of %v, got %d", ValidTrashAutoDeleteDays, days)
+		return nil, invalidRequestf("trash auto-delete days must be one of %v, got %d", ValidTrashAutoDeleteDays, days)
 	}
 	var out TrashAutoDelete
 	err := c.do(ctx, request{
@@ -232,10 +231,10 @@ type uploadBody struct {
 // any bytes; see internal/transfer for that.
 func (c *Client) CreateUploadURL(ctx context.Context, req UploadRequest) (*UploadTicket, error) {
 	if req.FileSize < 0 {
-		return nil, fmt.Errorf("file size cannot be negative, got %d", req.FileSize)
+		return nil, invalidRequestf("file size cannot be negative, got %d", req.FileSize)
 	}
 	if req.Resume && req.ModifiedTime == "" {
-		return nil, fmt.Errorf("resuming also requires the file's modified time")
+		return nil, invalidRequestf("resuming also requires the file's modified time")
 	}
 	var out UploadTicket
 	err := c.do(ctx, request{
